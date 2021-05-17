@@ -346,12 +346,28 @@ class Expt(QWidget):
 		self.file_processing(file_name)
 		
 	def plot(self, X_values, Y_values):
+		plt.figure(figsize=(7,6))
 		plt.title("LCR Series Experiment")
 		plt.xlabel("Frequency in Hz")
 		plt.ylabel("Current in mA")
 		plt.grid()
 		for x, y in zip(X_values, Y_values):
-			plt.plot(x, y)
+			i_max = np.array(y).max()
+			i_max_index = y.index(i_max)
+			x1 = [x[i] for i in range(i_max_index+1)]
+			x2 = [x[i] for i in range(i_max_index+1, len(x))]
+			# assert (np.all(np.diff(x1) > 0))
+			y1 =  [y[i] for i in range(i_max_index+1)]
+			y2 = [y[i] for i in range(i_max_index+1, len(y))]
+			y_val = i_max / math.sqrt(2)
+			first = np.interp(y_val, y1, x1)
+			y2.sort()
+			x2.reverse()
+			second = np.interp(y_val, y2, x2)
+			plt.plot(x, y, label="f0= "+str(round(first, 3))+" & f1= "+str(round(second, 3)))
+			plt.plot(first, y_val, "ro", markersize=3)
+			plt.plot(second, y_val, "ro", markersize=3)
+			plt.legend(loc='best', frameon=False, borderaxespad=0)
 		if "Windows" in platform.platform():
 			path = "C:\\"
 		else:
