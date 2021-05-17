@@ -14,8 +14,8 @@ sudo bash ./install-expeyes.sh
 
 ## Customised By
 
-Department of MCA, 2020 Batch, RVCE Bangalore.
--Shrihari M \n
--Sakib N B
--Tejaswini Vishweshwar Hegde
--Mithun T A
+Department of MCA, 2020 Batch, RVCE Bangalore.<br/>
+-Shrihari M<br/>
+-Sakib N B<br/>
+-Tejaswini Vishweshwar Hegde<br/>
+-Mithun T A<br/>
