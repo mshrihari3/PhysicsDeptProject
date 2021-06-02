@@ -346,7 +346,7 @@ class Expt(QWidget):
 		self.file_processing(file_name)
 		
 	def plot(self, X_values, Y_values):
-		plt.figure(figsize=(7,6))
+		plt.figure(figsize=(10,8))
 		plt.title("LCR Series Experiment")
 		plt.xlabel("Frequency in Hz")
 		plt.ylabel("Current in mA")
@@ -364,10 +364,11 @@ class Expt(QWidget):
 			y2.sort()
 			x2.reverse()
 			second = np.interp(y_val, y2, x2)
-			plt.plot(x, y, label="f1= "+str(round(first, 3))+"Hz & f2= "+str(round(second, 3))+"Hz")
+			plt.plot(x, y, label="f0= "+str(round(y_val, 3))+"Hz, f1= "+str(round(first, 3))+"Hz & f2= "+str(round(second, 3))+"Hz")
 			plt.plot(first, y_val, "ro", markersize=3)
 			plt.plot(second, y_val, "ro", markersize=3)
 			plt.legend(loc='best', frameon=False, borderaxespad=0)
+			plt.show()
 		if "Windows" in platform.platform():
 			path = "C:\\"
 		else:

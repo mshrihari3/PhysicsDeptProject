@@ -1,10 +1,22 @@
 import sys, time, utils, math, os.path
 
 from QtVersion import *
+from PyQt5.QtCore import *
 
 import pyqtgraph as pg
-import numpy as np
+try:
+	import numpy as np
+except:
+	os.system('pip install numpy')
 import eyes17.eyemath17 as em
+import os
+try:
+	import pandas as pd
+except:
+	os.system('pip install pandas')
+	import pandas as pd
+import matplotlib.pyplot as plt
+import platform
 
 
 class Expt(QWidget):
@@ -69,6 +81,10 @@ class Expt(QWidget):
 		self.SaveButton = QPushButton(self.tr("Save Data"))
 		self.SaveButton.clicked.connect(self.save_data)		
 		right.addWidget(self.SaveButton)
+		
+		self.SaveImageButton = QPushButton(self.tr("Save Image"))
+		self.SaveImageButton.clicked.connect(self.save_image)		
+		right.addWidget(self.SaveImageButton)
 
 		#------------------------end of right panel ----------------
 		
@@ -216,6 +232,59 @@ class Expt(QWidget):
 		if fn != '':
 			self.p.save(self.history, fn[0])
 			self.msg(self.tr('Traces saved to ') + unicode(fn))
+			
+	def file_processing(self, file_name):
+		if file_name[0].endswith('.csv'):
+			try:
+				df = pd.read_csv(file_name[0], header=None, skiprows=1)
+				df = df.dropna(axis=1)
+				cols = df.shape[1]
+				if cols % 2 == 0:
+					xs = []
+					ys = []
+					for i in range(0, cols, 2):
+						xs.append(df.iloc[:, i])
+						ys.append(df.iloc[:, i+1])
+					self.plot(xs, ys)
+				else:
+					buttonReply = QMessageBox.question(self, 'File Error', "The contents of the file do not match the requirements !", QMessageBox.Ok | QMessageBox.Cancel, QMessageBox.Cancel)
+			except Exception as e:
+				buttonReply = QMessageBox.question(self, 'File Error', "Select the Right File!!!", QMessageBox.Ok | QMessageBox.Cancel, QMessageBox.Cancel)
+				print(e)
+		else:
+			buttonReply = QMessageBox.question(self, 'File Error', "Only .csv files are allowed!", QMessageBox.Ok | QMessageBox.Cancel, QMessageBox.Cancel)
+			pass
+		
+	def save_image(self):
+		dialog = QFileDialog()
+		dialog.setFileMode(QFileDialog.AnyFile)
+		dialog.setFilter(QDir.Files)
+		
+		if dialog.exec_():
+			file_name = dialog.selectedFiles()
+			
+		self.file_processing(file_name)
+		
+	def plot(self, X_values, Y_values):
+		plt.figure(figsize=(7,6))
+		plt.title("Wavelength of LED Experiment")
+		plt.xlabel("Voltage (V)")
+		plt.ylabel("Current (mA)")
+		plt.grid()
+		i = 0
+		for x, y in zip(X_values, Y_values):
+			plt.plot(x, y, label=str(i))
+			plt.legend(loc='best', frameon=False, borderaxespad=0)
+			i += 1
+		if "Windows" in platform.platform():
+			path = "C:\\"
+		else:
+			path = "~/Desktop"
+		fn = QFileDialog.getSaveFileName(self, 'Saving Image', path)
+		if "." in fn[0]:
+			plt.savefig(fn[0])
+		else:
+			plt.savefig(fn[0]+".png")
 		
 	def msg(self, m):
 		self.msgwin.setText(self.tr(m))

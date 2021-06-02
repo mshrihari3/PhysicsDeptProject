@@ -2,11 +2,20 @@
 import sys, time, utils, math, os.path
 
 from QtVersion import *
+from PyQt5.QtCore import *
 
 import pyqtgraph as pg
 import numpy as np
 import eyes17.eyemath17 as em
 
+try:
+	import pandas as pd
+except:
+	os.system('pip install pandas')
+	import pandas as pd
+	
+import matplotlib.pyplot as plt
+import platform
 
 class Expt(QWidget):
 	TIMER = 50
@@ -77,6 +86,20 @@ class Expt(QWidget):
 		H.addWidget(l)
 		right.addLayout(H)
 		
+		H = QHBoxLayout()
+		l = QLabel(self.tr("Voltage ="))
+		l.setMaximumWidth(100)
+		H.addWidget(l)
+		self.Vval = utils.lineEdit(50, 5, 10, None)
+		H.addWidget(self.Vval)
+		l = QLabel(self.tr("V"))
+		l.setMaximumWidth(10)
+		H.addWidget(l)
+		b = QPushButton(self.tr("Register Voltage"))
+		#b.clicked.connect(self.charge)		
+		H.addWidget(b)
+		right.addLayout(H)
+		
 		b = QPushButton(self.tr("0 -> 5V step on OD1"))
 		b.clicked.connect(self.charge)		
 		right.addWidget(b)
@@ -107,6 +130,10 @@ class Expt(QWidget):
 		self.SaveButton = QPushButton(self.tr("Save Data"))
 		self.SaveButton.clicked.connect(self.save_data)		
 		right.addWidget(self.SaveButton)
+		
+		self.SaveImageButton = QPushButton(self.tr("Save Image"))
+		self.SaveImageButton.clicked.connect(self.save_image)		
+		right.addWidget(self.SaveImageButton)
 
 		
 		#------------------------end of right panel ----------------
@@ -197,6 +224,7 @@ class Expt(QWidget):
 		self.pwin.setXRange(0, self.tbvals[self.TBval]*10)
 		msperdiv = self.tbvals[int(tb)]				#millisecs / division
 		totalusec = msperdiv * 1000 * 10.0  	# total 10 divisions
+		#totalusec = msperdiv * 10.0  
 		self.TG = int(totalusec/self.NP)
 		if self.TG < self.MINDEL:
 			self.TG = self.MINDEL
@@ -227,6 +255,59 @@ class Expt(QWidget):
 			self.AWGval = val
 			self.AWGtext.setText(unicode(val))
 			self.set_wave()
+			
+	def file_processing(self, file_name):
+		if file_name[0].endswith('.csv'):
+			try:
+				df = pd.read_csv(file_name[0], header=None, skiprows=1)
+				df = df.dropna(axis=1)
+				cols = df.shape[1]
+				if cols % 2 == 0:
+					xs = []
+					ys = []
+					for i in range(0, cols, 2):
+						xs.append(df.iloc[:, i])
+						ys.append(df.iloc[:, i+1])
+					self.plot(xs, ys)
+				else:
+					buttonReply = QMessageBox.question(self, 'File Error', "The contents of the file do not match the requirements !", QMessageBox.Ok | QMessageBox.Cancel, QMessageBox.Cancel)
+			except Exception as e:
+				buttonReply = QMessageBox.question(self, 'File Error', "Select the Right File!!!", QMessageBox.Ok | QMessageBox.Cancel, QMessageBox.Cancel)
+				print(e)
+		else:
+			buttonReply = QMessageBox.question(self, 'File Error', "Only .csv files are allowed!", QMessageBox.Ok | QMessageBox.Cancel, QMessageBox.Cancel)
+			pass
+		
+	def save_image(self):
+		dialog = QFileDialog()
+		dialog.setFileMode(QFileDialog.AnyFile)
+		dialog.setFilter(QDir.Files)
+		
+		if dialog.exec_():
+			file_name = dialog.selectedFiles()
+			
+		self.file_processing(file_name)
+		
+	def plot(self, X_values, Y_values):
+		plt.figure(figsize=(7,6))
+		plt.title("RC Transient response Experiment")
+		plt.xlabel("Time (seconds)")
+		plt.ylabel("Voltage (V)")
+		plt.grid()
+		i = 0
+		for x, y in zip(X_values, Y_values):
+			plt.plot(x, y, label=str(i))
+			plt.legend(loc='best', frameon=False, borderaxespad=0)
+			i += 1
+		if "Windows" in platform.platform():
+			path = "C:\\"
+		else:
+			path = "~/Desktop"
+		fn = QFileDialog.getSaveFileName(self, 'Saving Image', path)
+		if "." in fn[0]:
+			plt.savefig(fn[0])
+		else:
+			plt.savefig(fn[0]+".png")
 		
 	def msg(self, m):
 		self.msgwin.setText(self.tr(m))
