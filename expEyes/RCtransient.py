@@ -45,6 +45,7 @@ class Expt(QWidget):
 	history = []		# Data store	
 	traces = []
 	trial = 0
+	rc_collection = []
 
 	sources = ['A1','A2','A3', 'MIC']
 	chanpens = ['y','g','w','m']     #pqtgraph pen colors
@@ -96,17 +97,17 @@ class Expt(QWidget):
 		l.setMaximumWidth(10)
 		H.addWidget(l)
 		b = QPushButton(self.tr("Register Voltage"))
-		#b.clicked.connect(self.charge)		
+		b.clicked.connect(self.register_voltage)		
 		H.addWidget(b)
 		right.addLayout(H)
 		
-		b = QPushButton(self.tr("0 -> 5V step on OD1"))
-		b.clicked.connect(self.charge)		
-		right.addWidget(b)
+		self.up_b = QPushButton(self.tr("0 -> 5V step on OD1"))
+		self.up_b.clicked.connect(self.charge)		
+		right.addWidget(self.up_b)
 		
-		b = QPushButton(self.tr("5 -> 0V step on OD1"))
-		b.clicked.connect(self.discharge)		
-		right.addWidget(b)
+		self.down_b = QPushButton(self.tr("5 -> 0V step on OD1"))
+		self.down_b.clicked.connect(self.discharge)		
+		right.addWidget(self.down_b)
 
 		b = QPushButton(self.tr("Calculate RC"))
 		b.clicked.connect(self.fit_curve)		
@@ -170,12 +171,20 @@ class Expt(QWidget):
 		if fa != None:
 			pa = fa[1]
 			rc = abs(1.0 / pa[1])
+			self.rc_collection.append(rc)
 			self.traces.append(self.pwin.plot(self.history[-1][0], fa[0], pen = self.traceCols[self.trial%5]))
 			self.trial += 1
 			ss = '%5.1f'%rc
 			self.msg(self.tr('Fitted data with V=Vo*exp(-t/RC). RC = ') + ss + self.tr(' mSec'))
 		else:
 			self.msg(self.tr('Failed to fit the curve with V=Vo*exp(-t/RC)'))
+			
+	def register_voltage(self):
+		print(self.Vval.text())
+		self.VMAX = int(self.Vval.text())
+		self.pwin.setYRange(self.VMIN, self.VMAX)
+		self.up_b.setText("0 -> "+str(self.VMAX)+"V step on OD1")
+		self.down_b.setText(str(self.VMAX)+" -> 0V step on OD1")
 	
 	def charge(self):
 		try:
@@ -211,6 +220,7 @@ class Expt(QWidget):
 		self.msg(self.tr('Cleared Data and Traces'))
 
 	def save_data(self):
+		print(self.rc_collection)
 		if self.history == []:
 			self.msg(self.tr('No data to save'))
 			return
